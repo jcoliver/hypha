@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Hypha</title>
+<link href="manual/CSS/mesquitePackage.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body class="thrColFixHdr" bgcolor="#f4f0e2">
+
+<div id="container">
+  <div id="header">
+	<table width="100%" border="0" cellpadding="4">
+		<tr>
+			<td width="51%"><strong id="PackageTitle">Hypha</strong></td>
+			<td width="33%" align="right"></div></td>
+			<td width="2%">&nbsp;</td>
+			<td width="14%">&nbsp;</td>
+		</tr>
+	</table>
+
+</div>
+  
+  
+  <div id="sidebar1">
+  </div><!-- end #sidebar1 -->
+
+  <div id="mainContent">
+    
+	<font size="+1">
+	<h2>Hypha: a Mesquite package for support value integration.</h2>
+	<p>Chromaseq is a package in Mesquite that processes chromatograms, makes contigs, base calls, etc., using in part the programs Phred and Phrap. For more information on Chromaseq, including screen shots and an overview, see the <strong><a href="manual/index.html">Chromaseq Manual</a></strong>.  You can also download it from there.</p>
+	</font>
+
+	<h2><a href="manual/index.html">Go to Hypha Site</a></h2>
+    
+</div>
+  <br class="clearfloat" /><!-- This clearing element should immediately follow the #mainContent div in order to force the #container div to contain all child floats -->
+  <div id="footer">
+    <p> </p>
+  </div><!-- end #footer -->
+</div><!-- end #container -->
+</body>
+</html>
