@@ -118,9 +118,11 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 		currentFont = MesquiteWindow.defaultFont;
 		fontName = new MesquiteString(MesquiteWindow.defaultFont.getName());
 		fontSizeName = new MesquiteString(Integer.toString(MesquiteWindow.defaultFont.getSize()));
-		MesquiteSubmenuSpec msf = addSubmenu(null, "Font", makeCommand("setFont", this), MesquiteSubmenu.getFontList());
-		msf.setList(MesquiteSubmenu.getFontList());
+		
+		MesquiteSubmenuSpec msf = FontUtil.getFontSubmenuSpec(this,this);
 		msf.setDocumentItems(false);
+		
+		
 		msf.setSelected(fontName);
 		MesquiteSubmenuSpec mss = addSubmenu(null, "Font Size", makeCommand("setFontSize", this), MesquiteSubmenu.getFontSizeList());
 		mss.setList(MesquiteSubmenu.getFontSizeList());
@@ -375,7 +377,7 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 		}
 
 		else if (checker.compare(this.getClass(), "Sets the font used for the node grid values", "[name of font]", commandName, "setFont")) {
-			String t = parser.getFirstToken(arguments);
+			String t = ParseUtil.getFirstToken(arguments, pos);
 			if (currentFont==null){
 				myFont = t;
 				fontName.setValue(t);
@@ -389,6 +391,24 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 				}
 			}
 			parametersChanged();
+		}
+		else if (checker.compare(this.getClass(), "Sets the font used for the node grid values", "[name of font]", commandName, FontUtil.setFontOther)) {
+			String t=FontUtil.getFontNameFromDialog(containerOfModule());
+			if (t!=null) {
+				if (currentFont==null){
+					myFont = t;
+					fontName.setValue(t);
+				}
+				else {
+					Font fontToSet = new Font (t, currentFont.getStyle(), currentFont.getSize());
+					if (fontToSet!= null) {
+						myFont = t;
+						fontName.setValue(t);
+						currentFont = fontToSet;
+					}
+				}
+				parametersChanged();
+			}
 		}
 		else if (checker.compare(this.getClass(), "Sets the font size used for the node grid values", "[size of font]", commandName, "setFontSize")) {
 			int fontSize = MesquiteInteger.fromString(arguments);
@@ -478,7 +498,7 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 			temp.addLine("setInitialOffsetY " + ngo.legend.getOffsetY());
 		}
 		if(myFont != null)
-			temp.addLine("setFont " + myFont);
+			temp.addLine("setFont " + StringUtil.tokenize(myFont));
 		if(myFontSize > 0)
 			temp.addLine("setFontSize " + myFontSize);
 		return temp;
