@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><!-- InstanceBegin template="manual/Templates/ChromaseqTemplate.dwt" codeOutsideHTMLIsLocked="false" -->
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+<!-- InstanceBeginEditable name="doctitle" -->
+<title>Using Hypha</title>
+<!-- InstanceEndEditable -->
+
+<![endif]--><!--[if IE]>
+<style type="text/css"> 
+/* place css fixes for all versions of IE in this conditional comment */
+.thrColFixHdr #sidebar2, .thrColFixHdr #sidebar1 { padding-top: 30px; }
+.thrColFixHdr #mainContent { zoom: 1; }
+/* the above proprietary zoom property gives IE the hasLayout it needs to avoid several bugs */
+</style>
+<![endif]-->
+<link href="CSS/mesquitePackage.css" rel="stylesheet" type="text/css" />
+<!-- InstanceBeginEditable name="head" -->
+<!-- InstanceEndEditable -->
+
+</head>
+
+<body class="thrColFixHdr" bgcolor="#8ED080">
+
+<div id="container">
+	<div id="header">
+		<table width="100%" border="0" cellpadding="4">
+			<tr>
+				<td width="51%"><strong id="PackageTitle">Hypha</strong></td>
+				<td width="33%" align="right"><div id="subtitle">How to use Hypha</div></div></td>
+				<td width="2%">&nbsp;</td>
+				<td width="14%">Version 1.0<br/>May 2013<br/></td>
+			</tr>
+		</table>
+	</div><!-- end header -->
+  
+  
+	<div id="sidebar1">
+		<div id="NonCollapsiblePanel" style="display: block">
+			<table width="100%" border="0" cellpadding="1">
+				<tr><td><a href="index.html">Home</a></td></tr>
+				<tr><td><a href="download.html">Download &amp; Install</a></td></tr>
+				<tr><td class="current"><a href="useHypha.html">Using Hypha</a></td></tr>
+				<tr><td><a href="options.html">Options</a></td></tr>
+				<tr><td><a href="citation.html">How to Cite</a></td></tr>
+				<tr><td><a href="https://github.com/jcoliver/hypha" target="_blank">Source code</a></td></tr>
+			</table>
+		</div><!-- end NonCollapsiblePanel -->
+	</div><!-- end sidebar1 -->
+
+	<div id="mainContent">
+    
+<!-- InstanceBeginEditable name="content" -->
+		<font  size="+1">
+		<h3>Using Hypha to display support values from multiple trees</h3>
+		<h4>A. Setting up the Mesquite file</h4>
+		<p>To use Hypha, you will need a Mesquite file with a Taxa block with all taxa from all trees you are considering.  
+		For information in setting up a Mesquite file, refer to the Mesquite Manual’s sections on files.  You can find 
+		basic file information in Mesquite (<span class="menuCommand">Help &gt; Mesquite Manual, Basics: Files</span>) or 
+		in the online manual:</p>
+		<font size="-1">
+			<p style="text-align:center;"><a href="http://mesquiteproject.org/Mesquite_Folder/docs/mesquite/managingFiles.html">http://mesquiteproject.org/Mesquite_Folder/docs/mesquite/managingFiles.html</a></p>
+		</font>
+		<p>For information on taxa, see (<span class="menuCommand">Help &gt; Mesquite Manual, Objects: Taxa</span>) in Mesquite 
+		or go to the online manual at:</p>
+		<font size="-1">
+			<p style="text-align:center;"><a href="http://mesquiteproject.org/Mesquite_Folder/docs/mesquite/Taxa.html">http://mesquiteproject.org/Mesquite_Folder/docs/mesquite/Taxa.html</a></p>
+		</font>
+		<p>The names of the taxa in the Taxa block must match the taxon names in the trees files exactly for tree importation 
+		to occur smoothly.  The file should also include the phylogenetic tree on which you would like to draw the support 
+		value grids, hereafter referred to as the display tree.  The easiest way to accomplish this would be to open a nexus 
+		file from within mesquite, consisting of (a) a TAXA or DATA block containing all the taxa and (b) a TREES block 
+		containing the display tree.</p>
+		<p>Next, include the trees from which support values will be harvested (support value trees).  To do this, select 
+		<span class="menuCommand">Taxa & Trees &gt; Get File with Trees &gt; Include Contents...</span>  and select the tree 
+		file(s) you would like to include.  If you have multiple taxa blocks, you may be asked to instruct Mesquite which 
+		taxa block the trees correspond to.  Additionally, if there are taxa in these tree files that are not included in 
+		the Taxa block of the Mesquite file, users may encounter problems incorporating those support value trees into the 
+		file.  Differences in spellings of taxon names may lead to problems, but Mesquite reports the taxon names that are 
+		causing problems.  If there is a problem including a tree file, users should correct the tree file in question, so 
+		taxon names match those in the Mesquite file.</p>
+		<p>When all the support value trees have been included, and all these trees correspond to the same taxa block as 
+		the phylogenetic tree, you are ready to set up the Grid Coordinator.  If you only have a single taxa block in your 
+		file, then all included trees should refer to that taxa block.  However, if you’re not sure, you can check by opening 
+		<span class="menuCommand">Taxa & Trees &gt; List of Tree Blocks</span> and looking at the ‘Taxa’ column.  The included 
+		support value trees should all refer to the same Taxa block as the display tree you wish to use for support value 
+		visualization.</p>
+
+		<h4>B. Setting up the Grid Coordinator</h4>
+		<p>Start by opening up the display tree in a tree window (<span class="menuCommand">Taxa & Trees &gt; New Tree Window 
+		&gt; Stored Trees</span>).  Currently, Hypha is only set up to work on Square, right&#45;oriented trees, so make sure 
+		the display tree is drawn in this manner (<span class="menuCommand">Drawing &gt; Tree Form &gt; Square Tree</span> and 
+		<span class="menuCommand">Drawing &gt; Orientation &gt; Right</span>).  Begin the Grid Coordinator by selecting 
+		<span class="menuCommand">Analysis &gt; Grids for nodes</span>.  You will be prompted to enter the 
+		number of rows and number of columns.  This will dictate the number of support values shown for each node.  Currently, 
+		all cells in the grid must correspond to some support value, and the maximum number of columns and rows is three (for 
+		a total maximum of nine possible support values displayed in a three by three grid).  The number of cells in the grid 
+		will likely correspond to the number of support value trees you have included in the file.</p>
+		<p>Mesquite will then prompt you for the following information for each cell in the grid:</p>
+		<ol>
+			<li>Number For Node of Tree</li>
+			<li>Tree source</li>
+			<li>Threshold value for cell</li>
+		</ol>
+		<p>The prompts will occur cell by cell.  In other words, you will be prompted for 1, 2, and 3 above for the first cell, 
+		then prompted for 1, 2, and 3 for the second cell, then for the third cell, etc.</p>
+
+		<ol>
+			<li>For the first prompt (Number For Node of Tree), you will select either &quot;Branch Lengths for Node from 
+			Other Tree&quot; or &quot;Branch Labels for Node from Other Tree&quot;.  Select the former if the support 
+			value tree corresponding to that cell has support values stored as branch lengths (such as bootstrap scores 
+			from PAUP), and select the latter if the support value tree corresponding to that cell has support values 
+			stored as branch labels (such as posterior probabilities from MrBayes).  If you’re not sure how the support 
+			values are stored, you can open a tree window for the support value tree in question (before you set up the 
+			Grid Coordinator; you may cancel the grid coordinator setup and start over if necessary), via 
+			<span class="menuCommand">Taxa & Trees > New Tree Window</span>.  Click on the &#39;Text&#39; tab and look at 
+			the newick format of the tree.  Trees with support values stored as branch lengths will show support values 
+			immediately after a colon (:).  For example:
+
+			<p style="text-align:center;">(((A, B):80, C):95)</p>
+
+			Is a newick format tree, showing support value of 80 for an A + B clade, and a support value of 95 for an A + 
+			B + C clade.  Trees with support values stored as branch labels will show support values immediately after a 
+			clade (if the tree also has branch lengths stored, the support values will precede the colon).  The same tree 
+			as above, with support values stored as branch labels will be represented as:
+
+			<p style="text-align:center;">(((A, B)&nbsp;80, C)&nbsp;95)</p>
+
+			If this tree also had branch lengths (showing, for example, the expected amount of evolutionary change), it 
+			would be written as:
+
+			<p style="text-align:center;">(((A, B)&nbsp;80:0.50, C)&nbsp;95:1.2)</p>
+
+			Indicating an A + B clade with support value of 80 and a branch length of 0.50, and an A + B + C clade with 
+			support value of 95 and a branch length of 1.2.</li>
+
+			<li>The second prompt, the Tree Source (for “Branch Lengths for Node from Other Tree” or &quot;Branch Labels for 
+			Node from Other Tree&quot;, depending on choice for previous prompt), refers to the support value trees 
+			corresponding to the grid cell.  Choose &#39;Stored Trees&#39;; you will assign specific trees to specific cells 
+			in a later step.</li>
+
+			<li>The final prompt asks the user to enter a threshold value.  This is the value used to determine the cutoff 
+			point at which different colors are displayed on the grid.  For example, if the threshold value entered was 70, 
+			any branches with applicable support values equal to or greater than 70 would be filled with black, and any 
+			branches with applicable support values below 70 would be filled with white (inapplicable values are colored 
+			grey; these are the default colors - users can change the colors later.  See Step III, below).  The thresholds 
+			for determining conflict are the same as the threshold for support.</li>
+		</ol>
+
+		<p><img style="float:right" src="images/Figure4.png" />After this information for each grid cell is provided, Mesquite 
+		will draw grids on the display tree.  However, Mesquite, by default, is using the display tree for support values, so 
+		you will have to change the tree source for each cell.  To do so, in the <a href="options.html#Legend">Grid 
+		Coordinator Legend</a>,  click on a cell and select the support value tree you would like to correspond to that 
+		particular cell (if the legend is not visible, it may be at the lower left corner of the tree drawing panel, but not 
+		visible if the tree drawing is larger than the window; you can find the legend by using the tree window scroll bars).  
+		If the desired support value tree is stored in the same Tree Block as the display tree, you should select &quot;Choose 
+		tree...&quot; and choose the appropriate support value tree from the list.  If the support value tree is stored in a 
+		different Tree Block (it will be if you followed the directions in the earlier part of these instructions, and have
+		not edited the Tree Blocks), select &quot;Tree block (for Branch Lengths/Labels for Node from Other Tree)&quot;.  
+		Mesquite will use the first tree in the tree block by default, so if the desired support value tree is not the first 
+		tree, you will then need to use the &quot;Choose tree...&quot; option, as above.  After you have assigned support value 
+		trees for all the cells in the grid, the cells should all be colored according to the threshold values, which are 
+		displayed in the Grid Coordinator Legend.</p>
+
+		<p>To change the colors of the cells or other display options, see the <a href="options.html">Options</a> page.</p>
+
+</font>
+<!-- InstanceEndEditable -->
+
+    
+    
+</div>
+	<!-- This clearing element should immediately follow the #mainContent div in order to force the #container div to contain all child floats --><br class="clearfloat" />
+  <div id="footer">
+    <p> ©2013 Jeffrey C. Oliver</p>
+  <!-- end #footer --></div>
+<!-- end #container --></div>
+</body>
+<!-- InstanceEnd --></html>
