@@ -111,10 +111,6 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 		formatForPDFItem = addCheckMenuItem(null, "Format Grids for PDF Printing", makeCommand("toggleFormatPDF", this), formatForPDF);
 		formatForPDFItem.setEnabled(true);
 
-annotateNodes = new MesquiteBoolean(false);
-annotateNodesMenuItem = addCheckMenuItem(null, "Annotate Nodes with Grid Values", makeCommand("toggleAnnotateNodes", this), annotateNodes);
-annotateNodesMenuItem.setEnabled(true);
-
 //		suppressRedraw = new MesquiteBoolean(false);
 //		suppressRedrawItem = addCheckMenuItem(null, "Suppress Redrawing", makeCommand("toggleSuppressRedraw", this), suppressRedraw);
 //		suppressRedrawItem.setEnabled(true);
@@ -346,12 +342,6 @@ annotateNodesMenuItem.setEnabled(true);
 	 		redraw();
 	 	}
 	 	
-else if (checker.compare(this.getClass(), "Toggles whether to add node grid values as node annotations to tree", "[on or off]", commandName, "toggleAnnotateNodes")) {
-	annotateNodes.toggleValue();
-	Debugg.println("Toggling annotations...");
-	redraw();
-}
-		
 	 	else if (checker.compare(this.getClass(), "Sets initial horizontal offset of legend from home position", "[offset in pixels]", commandName, "setInitialOffsetX")) {
 			MesquiteInteger pos = new MesquiteInteger();
 			int offset= MesquiteInteger.fromFirstToken(arguments, pos);
@@ -497,7 +487,6 @@ else if (checker.compare(this.getClass(), "Toggles whether to add node grid valu
 		temp.addLine("toggleDisplayCellColor " + displayCellColor.toOffOnString());
 		temp.addLine("toggleDisplayCellValue " + displayCellValue.toOffOnString());
 		temp.addLine("toggleDrawOutline " + drawOutline.toOffOnString());
-		temp.addLine("toggleAnnotateNodes " + annotateNodes.toOffOnString());
 		for(int iR = 0; iR < numRows; iR++){
 			for(int iC = 0; iC < numCols; iC++){
 				temp.addLine("setNumForNode_" + iR + "_" + iC + " ", numForNodeTask[iR][iC]);
@@ -663,7 +652,6 @@ else if (checker.compare(this.getClass(), "Toggles whether to add node grid valu
 class NodeGridOperator extends TreeDisplayDrawnExtra{
 	private GridForNode gridModule;
 	private Tree tree = treeDisplay.getTree();//Questionable
-private MesquiteTree annotatedTree;
 	GridLegend legend;
 	MesquiteNumber result;
 	MesquiteString resultString;
@@ -697,9 +685,6 @@ private MesquiteTree annotatedTree;
 	/*..................................................................*/
 	/**Operates on passed Graphics object; fills row by row, calling drawGridCell for each cell*/
 	private void drawGridOnBranch(Tree tree, int node, Graphics g){
-if (tree != null) {
-	annotatedTree = tree.cloneTree();
-}
 		numForNodeCells = gridModule.getNumNodeTask();
 		boolean toggleAnnotate = gridModule.annotateNodes.getValue();
 		if(numForNodeCells!=null){
@@ -719,10 +704,6 @@ if (tree != null) {
 					gridY = (int)(middleY.getIntValue() - gridHeight/2);
 					startX = gridX;
 					startY = gridY;
-					// annotations array so we can export the grid values as annotations
-MesquiteNumber cellValue = new MesquiteNumber(0);
-String[] annotations = new String[gridModule.getNumRows() * gridModule.getNumCols()];
-int annotationIndex = 0;
 					//Draws cells row by row
 					for(int iR = 0; iR < gridModule.getNumRows(); iR++){
 						//Checks to see if drawing the first row; maybe unnecessary...
@@ -734,40 +715,19 @@ int annotationIndex = 0;
 							if(iC==0){
 								startX = gridX;
 							}
-							cellValue.setToUnassigned();;
-							drawGridCell(tree, d, iR, iC, g, startX, startY, cellValue);
-annotations[annotationIndex] = "NGV" + iR + 1 + "." + iC + 1 + "=" + cellValue.toString();							
-annotationIndex++;
+							drawGridCell(tree, d, iR, iC, g, startX, startY);
 							startX += gridModule.getCellWidth(); //Increments the x position for drawing the next grid cell in the row
 						}
 						startY += gridModule.getCellHeight(); //Increments the y position for drawing the next row
 					}
-// Write those annotations to the tree
-String annotationString = String.join(":", annotations);
-if (annotatedTree != null) {
-	if (toggleAnnotate) {
-		Debugg.println("Attempting to annotate node " + node + "...");
-		//	((MesquiteTree)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, annotationString);
-		annotatedTree.setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, annotationString);
-		Debugg.println("Annotation attempt: " + annotatedTree.writeTree());
-	} else {
-		Debugg.println("Attempting to remove annotations...");
-		//	if (((MesquiteTree)tree).getAssociatedObject(NameReference.getNameReference("NodeGridValues"), node) != null) {
-		//		((MesquiteTree)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, null);
-		if (annotatedTree.getAssociatedObject(NameReference.getNameReference("NodeGridValues"), node) != null) {
-			annotatedTree.setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, null);
-		}
-	}
-}
 				}
 			}
 		}
-
 	}
 	/*..................................................................*/
 	/**Draws a grid cell; color is based on weather NumberForNode value is
 	 * (1) applicable and (2) above or below a user-defined threshold value.*/
-	private void drawGridCell(Tree tree, int node, int row, int col, Graphics g, int x, int y, MesquiteNumber cellValue){
+	private void drawGridCell(Tree tree, int node, int row, int col, Graphics g, int x, int y){
 		Color oC = g.getColor();
 		Color inApp = gridModule.inAppColor;
 		Color belowThresh = gridModule.belowThreshColor;
@@ -780,7 +740,6 @@ if (annotatedTree != null) {
 		if(numForNodeCells!=null){
 			MesquiteNumber threshold = new MesquiteNumber(numForNodeCells[row][col].getThreshold());//TODO: may want to put conditional here, to make sure thresholdArray!=null
 			MesquiteNumber nodeValue = new MesquiteNumber(this.doCalculations(node, row, col));
-			cellValue.setValue(nodeValue);
 			int sigFigs = numForNodeCells[row][col].getSigFigs();
 			if(!MesquiteInteger.isCombinable(sigFigs)){
 				sigFigs = 2;
