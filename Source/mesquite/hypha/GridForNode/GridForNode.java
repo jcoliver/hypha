@@ -348,6 +348,7 @@ annotateNodesMenuItem.setEnabled(true);
 	 	
 else if (checker.compare(this.getClass(), "Toggles whether to add node grid values as node annotations to tree", "[on or off]", commandName, "toggleAnnotateNodes")) {
 	annotateNodes.toggleValue();
+	Debugg.println("Toggling annotations...");
 	redraw();
 }
 		
@@ -496,7 +497,7 @@ else if (checker.compare(this.getClass(), "Toggles whether to add node grid valu
 		temp.addLine("toggleDisplayCellColor " + displayCellColor.toOffOnString());
 		temp.addLine("toggleDisplayCellValue " + displayCellValue.toOffOnString());
 		temp.addLine("toggleDrawOutline " + drawOutline.toOffOnString());
-		temp.addLine("annotateNodes " + annotateNodes.toOffOnString());
+		temp.addLine("toggleAnnotateNodes " + annotateNodes.toOffOnString());
 		for(int iR = 0; iR < numRows; iR++){
 			for(int iC = 0; iC < numCols; iC++){
 				temp.addLine("setNumForNode_" + iR + "_" + iC + " ", numForNodeTask[iR][iC]);
@@ -662,6 +663,7 @@ else if (checker.compare(this.getClass(), "Toggles whether to add node grid valu
 class NodeGridOperator extends TreeDisplayDrawnExtra{
 	private GridForNode gridModule;
 	private Tree tree = treeDisplay.getTree();//Questionable
+private MesquiteTree annotatedTree;
 	GridLegend legend;
 	MesquiteNumber result;
 	MesquiteString resultString;
@@ -695,6 +697,9 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	/*..................................................................*/
 	/**Operates on passed Graphics object; fills row by row, calling drawGridCell for each cell*/
 	private void drawGridOnBranch(Tree tree, int node, Graphics g){
+if (tree != null) {
+	annotatedTree = tree.cloneTree();
+}
 		numForNodeCells = gridModule.getNumNodeTask();
 		boolean toggleAnnotate = gridModule.annotateNodes.getValue();
 		if(numForNodeCells!=null){
@@ -739,11 +744,19 @@ annotationIndex++;
 					}
 // Write those annotations to the tree
 String annotationString = String.join(":", annotations);
-if (toggleAnnotate) {
-	((MesquiteTree)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, annotationString);
-} else {
-	if (((MesquiteTree)tree).getAssociatedObject(NameReference.getNameReference("NodeGridValues"), node) != null) {
-		((MesquiteTree)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, null);
+if (annotatedTree != null) {
+	if (toggleAnnotate) {
+		Debugg.println("Attempting to annotate node " + node + "...");
+		//	((MesquiteTree)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, annotationString);
+		annotatedTree.setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, annotationString);
+		Debugg.println("Annotation attempt: " + annotatedTree.writeTree());
+	} else {
+		Debugg.println("Attempting to remove annotations...");
+		//	if (((MesquiteTree)tree).getAssociatedObject(NameReference.getNameReference("NodeGridValues"), node) != null) {
+		//		((MesquiteTree)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, null);
+		if (annotatedTree.getAssociatedObject(NameReference.getNameReference("NodeGridValues"), node) != null) {
+			annotatedTree.setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, null);
+		}
 	}
 }
 				}
