@@ -348,8 +348,16 @@ annotateNodesMenuItem.setEnabled(true);
 	 	
 else if (checker.compare(this.getClass(), "Toggles whether to add node grid values as node annotations to tree", "[on or off]", commandName, "toggleAnnotateNodes")) {
 	annotateNodes.toggleValue();
-	Debugg.println("Toggling annotations...");
 	redraw();
+	// After the toggle happens, need to notify listeners that the actual tree has changed
+	Enumeration<NodeGridOperator> e = grids.elements();
+	while(e.hasMoreElements()){
+		Object obj = e.nextElement();
+		if(obj instanceof NodeGridOperator){
+			NodeGridOperator nGO = (NodeGridOperator)obj;
+			((Associable)nGO.getTree()).notifyListeners(this, new Notification(MesquiteListener.ANNOTATION_CHANGED));
+		}
+	}
 }
 		
 	 	else if (checker.compare(this.getClass(), "Sets initial horizontal offset of legend from home position", "[offset in pixels]", commandName, "setInitialOffsetX")) {
@@ -562,6 +570,7 @@ else if (checker.compare(this.getClass(), "Toggles whether to add node grid valu
 			if(obj instanceof NodeGridOperator){
 				NodeGridOperator nGO = (NodeGridOperator)obj;
 				nGO.getTreeDisplay().repaint();
+				((Associable)nGO.getTree()).notifyListeners(this, new Notification(MesquiteListener.ANNOTATION_CHANGED));
 				if(nGO.legend!=null){
 					nGO.legend.adjustColors(getCellColors());
 				}
@@ -697,7 +706,7 @@ private MesquiteTree annotatedTree;
 	/*..................................................................*/
 	/**Operates on passed Graphics object; fills row by row, calling drawGridCell for each cell*/
 	private void drawGridOnBranch(Tree tree, int node, Graphics g){
-if (tree != null) {
+if (annotatedTree == null && tree != null) {
 	annotatedTree = tree.cloneTree();
 }
 		numForNodeCells = gridModule.getNumNodeTask();
@@ -736,7 +745,7 @@ int annotationIndex = 0;
 							}
 							cellValue.setToUnassigned();;
 							drawGridCell(tree, d, iR, iC, g, startX, startY, cellValue);
-annotations[annotationIndex] = "NGV" + iR + 1 + "." + iC + 1 + "=" + cellValue.toString();							
+annotations[annotationIndex] = "NGV" + (iR + 1) + "." + (iC + 1) + "=" + cellValue.toString();							
 annotationIndex++;
 							startX += gridModule.getCellWidth(); //Increments the x position for drawing the next grid cell in the row
 						}
@@ -744,21 +753,35 @@ annotationIndex++;
 					}
 // Write those annotations to the tree
 String annotationString = String.join(":", annotations);
-if (annotatedTree != null) {
+if (tree instanceof Associable) {
 	if (toggleAnnotate) {
-		Debugg.println("Attempting to annotate node " + node + "...");
-		//	((MesquiteTree)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, annotationString);
-		annotatedTree.setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, annotationString);
-		Debugg.println("Annotation attempt: " + annotatedTree.writeTree());
+		((Associable)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), d, annotationString);
+//		((Associable)tree).notifyListeners(this, new Notification(MesquiteListener.ANNOTATION_CHANGED));
 	} else {
-		Debugg.println("Attempting to remove annotations...");
-		//	if (((MesquiteTree)tree).getAssociatedObject(NameReference.getNameReference("NodeGridValues"), node) != null) {
-		//		((MesquiteTree)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, null);
-		if (annotatedTree.getAssociatedObject(NameReference.getNameReference("NodeGridValues"), node) != null) {
-			annotatedTree.setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, null);
-		}
+//		if (((Associable)tree).getAssociatedObject(NameReference.getNameReference("NodeGridValues"), d) != null) {
+//			((Associable)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), d, null);
+//		}
 	}
 }
+//if (annotatedTree != null) {
+//	if (toggleAnnotate) {
+//		Debugg.println("Attempting to annotate node " + node + "...");
+//		//	((MesquiteTree)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, annotationString);
+//		annotatedTree.setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, annotationString);
+//		Debugg.println("Annotation attempt: " + annotatedTree.writeTree());
+//	} else {
+//		Debugg.print("Attempting to remove annotations...");
+//		//	if (((MesquiteTree)tree).getAssociatedObject(NameReference.getNameReference("NodeGridValues"), node) != null) {
+//		//		((MesquiteTree)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, null);
+//		if (annotatedTree.getAssociatedObject(NameReference.getNameReference("NodeGridValues"), node) != null) {
+//			annotatedTree.setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, null);
+//			Debugg.println("\nAnnotation attempt: " + annotatedTree.writeTree());
+//		}
+//		else {
+//			Debugg.println("NameReference is ***null***");
+//		}
+//	}
+//}
 				}
 			}
 		}
@@ -863,6 +886,12 @@ if (annotatedTree != null) {
 	/*..................................................................*/
 	public void drawOnTree(Tree tree, int drawnRoot, Graphics g) {//Called by TreeDisplay, potentially twice
 		Font origFont = g.getFont();
+// Remove grid annotations if they're supposed to be gone
+if (!gridModule.annotateNodes.getValue()) {
+	if (((Associable)tree).anyAssociatedObject(NameReference.getNameReference("NodeGridValues"))) {
+		((Associable)tree).removeAssociatedObjects(NameReference.getNameReference("NodeGridValues"));
+	}
+}
 		drawGridOnBranch(tree, tree.getRoot(), g);
 		if(legend==null){
 			legend = new GridLegend(gridModule, treeDisplay, "Grid Coordinator Legend", Color.white, gridModule.getCellColors(), gridModule.getNumNodeTask(), gridModule.getNumRows(), gridModule.getNumCols());
@@ -878,8 +907,9 @@ if (annotatedTree != null) {
 		g.setFont(origFont);
 	}
 	/*..................................................................*/
+	//TODO: Not clear this method should even be defined here...
 	public void printOnTree(Tree tree, int drawnRoot, Graphics g) { //Called by TreeDisplay, potentially twice
-		drawOnTree(tree, drawnRoot, g);
+//		drawOnTree(tree, drawnRoot, g); 
 	}
 	/*..................................................................*/
 	public void setTree(Tree tree) {
