@@ -26,7 +26,7 @@ public class aHyphaIntro extends PackageIntro{
 	}
 	/*.................................................................................................................*/
 	public boolean isPrerelease(){
-		return true;  
+		return false;  
 	}
 	/*.................................................................................................................*/
 	public String getManualPath(){
@@ -82,7 +82,7 @@ public class aHyphaIntro extends PackageIntro{
 	/*.................................................................................................................*/
 	/** Returns build number for a package of modules as an integer*/
 	public int getPackageBuildNumber(){
-		return 2;
+		return 3;
 	}
 /* release history:
 	 */
