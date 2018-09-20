@@ -868,7 +868,7 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		}
 		drawGridOnBranch(tree, tree.getRoot(), g);
 		if(legend==null){
-			legend = new GridLegend(gridModule, treeDisplay, "Grid Coordinator Legend", Color.white, gridModule.getCellColors(), gridModule.getNumNodeTask(), gridModule.getNumRows(), gridModule.getNumCols());
+			legend = new GridLegend(gridModule, treeDisplay, "Grid Coordinator Legend", Color.black, gridModule.getCellColors(), gridModule.getNumNodeTask(), gridModule.getNumRows(), gridModule.getNumCols());
 			addPanelPlease(legend);
 			legend.setVisible(true);
 		}
@@ -941,7 +941,7 @@ class GridLegend extends TreeDisplayLegend{
 		setOffsetX(gridModule.getInitialOffsetX());
 		setOffsetY(gridModule.getInitialOffsetY());
 		this.gridModule = gridModule;
-		setBackground(ColorDistribution.darkGreen);
+		setBackground(ColorDistribution.veryLightGray);
 		setLayout(null);
 		setSize(legendWidth, legendHeight);
 		dropDownTriangle = MesquitePopup.getDropDownTriangle();
