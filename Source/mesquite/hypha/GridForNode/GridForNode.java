@@ -881,9 +881,9 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		g.setFont(origFont);
 	}
 	/*..................................................................*/
-	// Only included as required by superclass
+	// Required for grids to be printed on PDF output
 	public void printOnTree(Tree tree, int drawnRoot, Graphics g) { //Called by TreeDisplay, potentially twice
-		//drawOnTree(tree, drawnRoot, g); 
+		drawOnTree(tree, drawnRoot, g); 
 	}
 	/*..................................................................*/
 	public void setTree(Tree tree) {
