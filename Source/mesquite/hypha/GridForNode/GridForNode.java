@@ -14,6 +14,8 @@ package mesquite.hypha.GridForNode;
 
 import java.awt.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+
 import mesquite.lib.*;
 import mesquite.lib.duties.*;
 import mesquite.hypha.NumForNodeWithThreshold.NumForNodeWithThreshold;
@@ -293,6 +295,7 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 				highCMenuItem.setSelected(hcName);
 				resetContainingMenuBar();
 				redraw();
+				
 	 	}
 	 	else if (checker.compare(this.getClass(), "Toggles whether cells are colored according to value.", "[on or off]", commandName, "toggleDisplayCellColor")){
 	 		boolean current = displayCellColor.getValue();
@@ -333,7 +336,8 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 	 	else if (checker.compare(this.getClass(), "Toggles whether to display external grid outline.", "[on or off]", commandName, "toggleDrawOutline")){
 	 		boolean current = drawOutline.getValue();
 	 		drawOutline.toggleValue(parser.getFirstToken(arguments));
-	 		if(current!=drawOutline.getValue()){//TODO: may need conditional to make sure either values or colors (or both) are being displayed?
+	 		//TODO: may need conditional to make sure either values or colors (or both) are being displayed?
+	 		if(current!=drawOutline.getValue()){
 	 			parametersChanged();
 	 			redraw();
 	 		}
@@ -507,7 +511,6 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 		temp.addLine("toggleDisplayCellColor " + displayCellColor.toOffOnString());
 		temp.addLine("toggleDisplayCellValue " + displayCellValue.toOffOnString());
 		temp.addLine("toggleDrawOutline " + drawOutline.toOffOnString());
-		temp.addLine("toggleAnnotateNodes " + annotateNodes.toOffOnString());
 		for(int iR = 0; iR < numRows; iR++){
 			for(int iC = 0; iC < numCols; iC++){
 				temp.addLine("setNumForNode_" + iR + "_" + iC + " ", numForNodeTask[iR][iC]);
@@ -522,6 +525,7 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 			temp.addLine("setFont " + StringUtil.tokenize(myFont));
 		if(myFontSize > 0)
 			temp.addLine("setFontSize " + myFontSize);
+		temp.addLine("toggleAnnotateNodes " + annotateNodes.toOffOnString());
 		return temp;
 	}
 	/*..................................................................*/
@@ -565,6 +569,7 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 		redraw();
 	}
 	/*..................................................................*/
+	/** Calls TaxaTreeDisplay.repaint(), which in turn calls NodeGridOperator.drawOnTree()*/
 	public void redraw(){
 		Enumeration<NodeGridOperator> e = grids.elements();
 		while(e.hasMoreElements()){
@@ -775,7 +780,8 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		Color textColor = Color.BLACK;
 		Color altTextColor = Color.WHITE;
 		if(numForNodeCells!=null){
-			MesquiteNumber threshold = new MesquiteNumber(numForNodeCells[row][col].getThreshold());//TODO: may want to put conditional here, to make sure thresholdArray!=null
+			//TODO: may want to put conditional here, to make sure thresholdArray!=null
+			MesquiteNumber threshold = new MesquiteNumber(numForNodeCells[row][col].getThreshold());
 			MesquiteNumber nodeValue = new MesquiteNumber(this.doCalculations(node, row, col));
 			cellValue.setValue(nodeValue);
 			int sigFigs = numForNodeCells[row][col].getSigFigs();
@@ -858,7 +864,7 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		}
 	}
 	/*..................................................................*/
-	public void drawOnTree(Tree tree, int drawnRoot, Graphics g) {//Called by TreeDisplay, potentially twice
+	public void drawOnTree(Tree tree, int drawnRoot, Graphics g) {//Called by TreeDisplay.drawAllExtras, potentially twice
 		Font origFont = g.getFont();
 		// Remove grid annotations if they're supposed to be gone
 		if (!gridModule.annotateNodes.getValue()) {
@@ -882,7 +888,7 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	}
 	/*..................................................................*/
 	// Required for grids to be printed on PDF output
-	public void printOnTree(Tree tree, int drawnRoot, Graphics g) { //Called by TreeDisplay, potentially twice
+	public void printOnTree(Tree tree, int drawnRoot, Graphics g) { //Called by TreeDisplay.drawAllExtras, potentially twice
 		drawOnTree(tree, drawnRoot, g); 
 	}
 	/*..................................................................*/
@@ -917,7 +923,7 @@ class GridLegend extends TreeDisplayLegend{
 	private Color titleColor;
 	private Color[] cellColors;
 	private String[] stateNames;
-	private int topEdge = 6; //Used for popup menu operation, but perhaps incorrectly...
+	private int topEdge = 6; //Used for popup menu operation, but perhaps incorrectly
 	private int nRows;
 	private int nCols;
 	private int boxWidth = 28;
