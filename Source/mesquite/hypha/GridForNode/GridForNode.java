@@ -768,7 +768,7 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	/*..................................................................*/
 	/**Draws a grid cell; color is based on weather NumberForNode value is
 	 * (1) applicable and (2) above or below a user-defined threshold value.*/
-	private void drawGridCell(Tree tree, int node, int row, int col, Graphics g, int x, int y){
+	private void drawGridCell(Tree tree, int node, int row, int col, Graphics g, int x, int y, MesquiteNumber cellValue){
 		Color oC = g.getColor();
 		Color inApp = gridModule.inAppColor;
 		Color belowThresh = gridModule.belowThreshColor;
@@ -782,6 +782,7 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 			//TODO: may want to put conditional here, to make sure thresholdArray!=null
 			MesquiteNumber threshold = new MesquiteNumber(numForNodeCells[row][col].getThreshold());
 			MesquiteNumber nodeValue = new MesquiteNumber(this.doCalculations(node, row, col));
+			cellValue.setValue(nodeValue);
 			int sigFigs = numForNodeCells[row][col].getSigFigs();
 			if(!MesquiteInteger.isCombinable(sigFigs)){
 				sigFigs = 2;
