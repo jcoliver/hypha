@@ -353,7 +353,8 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 	 	else if (checker.compare(this.getClass(), "Toggles whether to add node grid values as node annotations to tree", "[on or off]", commandName, "toggleAnnotateNodes")) {
 	 		annotateNodes.toggleValue(parser.getFirstToken(arguments));
 	 		if(annotateNodes.getValue()){
- 				redraw();
+//	 			redraw(); // This was original way
+	 			reannotate();
  		 		// After the annotation happens, need to notify listeners that the actual tree has changed
  		 		Enumeration<NodeGridOperator> e = grids.elements();
  		 		while(e.hasMoreElements()){
@@ -566,6 +567,7 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 	/*..................................................................*/
 	//TODO: this method should probably be more flushed out...
 	public void employeeParametersChanged(MesquiteModule employee, MesquiteModule source, Notification notification){
+		reannotate();
 		redraw();
 	}
 	/*..................................................................*/
@@ -583,6 +585,23 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 			}
 		}
 	}
+	/*..................................................................*/
+	/** Calls TreeDisplay.setTreeAllExtras, starting cascade that ultimately 
+	 * calls TreeDisplayDrawnExtra.setTree() i.e. NodeGridOperator.setTree()*/
+	public void reannotate() {
+		Enumeration<NodeGridOperator> e = grids.elements();
+		while(e.hasMoreElements()){
+			Object obj = e.nextElement();
+			if(obj instanceof NodeGridOperator){
+				NodeGridOperator nGO = (NodeGridOperator)obj;
+				if (nGO.getTree() != null) {
+					// This **should** call NodeGridOperator.setTree()
+					nGO.getTreeDisplay().setTreeAllExtras(nGO.getTree());
+				}
+			}
+		}
+	}
+
 	/*..................................................................*/
 	public void endJob(){
 		closeAllNodeOperators();
@@ -685,41 +704,72 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 //	boolean togglePrint = true;
 	private boolean initialSetup = true;
 
-	/**Constructor method for NodeGridOperator*/
+	/** Constructor method
+	 * 
+	 * @param ownerModule  		the {@link mesquite.hypha.GridForNode} module 
+	 * 							that owns this object
+	 * @param treeDisplay		the {@link mesquite.lib.TreeDisplay} 
+	 * 							responsible for displaying the tree and grids
+	 * @param numForNodeArray	two-dimensional array for the calculators that 
+	 * 							will provide cell values*/
 	public NodeGridOperator(GridForNode ownerModule, TreeDisplay treeDisplay, NumForNodeWithThreshold[][] numForNodeArray){
 		super(ownerModule, treeDisplay);
 		gridModule = ownerModule;
 	}
 	/*..................................................................*/
-	/**Calls the NumberForNode calculate number method for a particular node and cell element*/
+	/** Calls the NumberForNode calculate number method for a particular node 
+	 * and cell element
+	 * 
+	 * @param node node number in {@code this.tree} to perform calculations
+	 * @param row  row number in corresponding grid
+	 * @param col  column number in corresponding grid
+	 * @return  MesquiteNumber value for the node/row/column combination for 
+	 * the corresponding NumberForNodeWithThreshold module; returns unassigned 
+	 * if the required modules are not available.*/
 	private MesquiteNumber doCalculations(int node, int row, int col){
-		if(tree.nodeExists(node)){
-			if(result==null){
+		if (tree.nodeExists(node)){
+			if( result == null ){
 				result = new MesquiteNumber();
 				result.setToUnassigned();
-			} else result.setToUnassigned();
-			if(resultString==null)
+			} else {
+				result.setToUnassigned();
+			}
+			if (resultString==null) {
 				resultString = new MesquiteString("");
-			else resultString.setValue("");
-			numForNodeCells[row][col].calculateNumber(tree, node, result, resultString);
-		}
-		else {
+			} else {
+				resultString.setValue("");
+			}
+			// MUST retrieve anew to ensure numForNodeCells is not null
+			numForNodeCells = gridModule.getNumNodeTask();
+			if (numForNodeCells != null) {
+				// Need to check for specific module to avoid NPEs
+				if (numForNodeCells[row][col] != null) {
+					numForNodeCells[row][col].calculateNumber(tree, node, result, resultString);
+				}
+			} 
+		} else {
 			result.setToUnassigned();
 		}
 		return result;
 	}
 	/*..................................................................*/
-	/**Operates on passed Graphics object; fills row by row, calling drawGridCell for each cell*/
+	/** <p>Draws grids on {@code tree}.</p>
+	 * <p>Operates on passed Graphics object {@code g}; filling in grids row 
+	 * by row, calling {@link #drawGridCell} for each cell; recurses through 
+	 * all descendants of {@code node}</p>
+	 * 
+	 * @param tree  the {@code Tree} object to be annotated
+	 * @param node  the node number on which to start
+	 * @param g	    the {@code Graphics} object responsible for drawing*/
 	private void drawGridOnBranch(Tree tree, int node, Graphics g){
 		numForNodeCells = gridModule.getNumNodeTask();
-		boolean annotateNodes = gridModule.annotateNodes.getValue();
 		if(numForNodeCells!=null){
 			int gridWidth = gridModule.getNumCols() * gridModule.getCellWidth();
 			int gridHeight = gridModule.getNumRows() * gridModule.getCellHeight();
 			int gridX, gridY, startX, startY;
-			//Recurses through tree
+			// Recurse through tree
 			for(int d = tree.firstDaughterOfNode(node); tree.nodeExists(d); d = tree.nextSisterOfNode(d)){
-				//Checks to make sure node isn't terminal (don't want these grids on terminal branches):
+				// Check to make sure node isn't terminal (don't want these grids on terminal branches):
 				if(!tree.nodeIsTerminal(d)){
 					drawGridOnBranch(tree, d, g);
 					MesquiteNumber middleX = new MesquiteNumber();
@@ -730,45 +780,41 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 					gridY = (int)(middleY.getIntValue() - gridHeight/2);
 					startX = gridX;
 					startY = gridY;
-					// An array we'll use (if annotateNodes is true) to store node annotations
-					String[] annotations = new String[gridModule.getNumRows() * gridModule.getNumCols()];
-					int annotationIndex = 0;
-					MesquiteNumber cellValue = new MesquiteNumber(0);
-					//Draws cells row by row
+					// Draw cells row by row
 					for(int iR = 0; iR < gridModule.getNumRows(); iR++){
-						//Checks to see if drawing the first row; maybe unnecessary...
+						// Check to see if drawing the first row; maybe unnecessary...
 						if(iR==0){
 							startY = gridY;
 						}
 						for(int iC = 0; iC < gridModule.getNumCols(); iC++){
-							//Resets starting X position if starting a new row
+							// Reset starting X position if starting a new row
 							if(iC==0){
 								startX = gridX;
 							}
-							cellValue.setToUnassigned();;
-							drawGridCell(tree, d, iR, iC, g, startX, startY, cellValue);
-							// Store the annotation for this cell in the String array
-							annotations[annotationIndex] = "NGV" + (iR + 1) + "." + (iC + 1) + "=" + cellValue.toString();							
-							annotationIndex++;
-							startX += gridModule.getCellWidth(); //Increments the x position for drawing the next grid cell in the row
+							drawGridCell(tree, d, iR, iC, g, startX, startY);
+							// Increment the x position for drawing the next grid cell in the row
+							startX += gridModule.getCellWidth(); 
 						}
-						startY += gridModule.getCellHeight(); //Increments the y position for drawing the next row
-					}
-					// Write those annotations to the tree (if appropriate)
-					if (annotateNodes) {
-						if (tree instanceof Associable) {
-							String annotationString = String.join(":", annotations);
-							((Associable)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), d, annotationString);
-						}
+						// Increment the y position for drawing the next row
+						startY += gridModule.getCellHeight(); 
 					}
 				}
 			}
 		}
 	}
 	/*..................................................................*/
-	/**Draws a grid cell; color is based on weather NumberForNode value is
-	 * (1) applicable and (2) above or below a user-defined threshold value.*/
-	private void drawGridCell(Tree tree, int node, int row, int col, Graphics g, int x, int y, MesquiteNumber cellValue){
+	/** <p>Draws a single grid cell</p>
+	 * <p>Color is based on whether {@code NumberForNode} value is (1) 
+	 * applicable and (2) above or below a user-defined threshold value.</p>
+	 * 
+	 * @param tree  the {@code Tree} object to be annotated
+	 * @param node  node number where grid is located
+	 * @param row   row number in corresponding grid
+	 * @param col   column number in corresponding grid
+	 * @param g	    {@code Graphics} object responsible for drawing
+	 * @param x		left edge of grid cell
+	 * @param y		top edge of grid cell*/
+	private void drawGridCell(Tree tree, int node, int row, int col, Graphics g, int x, int y){
 		Color oC = g.getColor();
 		Color inApp = gridModule.inAppColor;
 		Color belowThresh = gridModule.belowThreshColor;
@@ -778,31 +824,30 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		Color boxColor = Color.WHITE;
 		Color textColor = Color.BLACK;
 		Color altTextColor = Color.WHITE;
-		if(numForNodeCells!=null){
+		if (numForNodeCells!=null) {
 			//TODO: may want to put conditional here, to make sure thresholdArray!=null
 			MesquiteNumber threshold = new MesquiteNumber(numForNodeCells[row][col].getThreshold());
 			MesquiteNumber nodeValue = new MesquiteNumber(this.doCalculations(node, row, col));
-			cellValue.setValue(nodeValue);
 			int sigFigs = numForNodeCells[row][col].getSigFigs();
-			if(!MesquiteInteger.isCombinable(sigFigs)){
+			if (!MesquiteInteger.isCombinable(sigFigs)) {
 				sigFigs = 2;
 			}
-		if(gridModule.getDisplayCellColor().getValue()){
-			if(nodeValue.isCombinable() && !nodeValue.isNegative()){
-				if(nodeValue.isLessThan(threshold))
-					boxColor = belowThresh;
-				else boxColor = aboveThresh;
-			} else if(nodeValue.isCombinable()){
-				MesquiteNumber negativeThresh = new MesquiteNumber(threshold);
-				negativeThresh.multiplyBy(-1.0);
-				if(nodeValue.isMoreThan(negativeThresh)){
-					boxColor = lowConflict; //Low conflict
-				} else boxColor = highConflict; //Big conflict
-			} else boxColor = inApp;
-		}
-		else g.setColor(Color.WHITE);
+			if (gridModule.getDisplayCellColor().getValue()) {
+				if (nodeValue.isCombinable() && !nodeValue.isNegative()) {
+					if(nodeValue.isLessThan(threshold))
+						boxColor = belowThresh;
+					else boxColor = aboveThresh;
+				} else if (nodeValue.isCombinable()) {
+					MesquiteNumber negativeThresh = new MesquiteNumber(threshold);
+					negativeThresh.multiplyBy(-1.0);
+					if (nodeValue.isMoreThan(negativeThresh)) {
+						boxColor = lowConflict; //Low conflict
+					} else boxColor = highConflict; //Big conflict
+				} else boxColor = inApp;
+			}
+			else g.setColor(Color.WHITE);
 
-/*	To turn off conflict coloring, comment out the above conditionals, and instead use:
+			/*	To turn off conflict coloring, comment out the above conditionals, and instead use:
 			if(gridModule.getDisplayCellColor().getValue()){
 				if(nodeValue.isCombinable()){
 					if(nodeValue.isLessThan(threshold))
@@ -811,27 +856,35 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 				} else boxColor = inApp;
 			}
 			else g.setColor(Color.WHITE);
-*/
+			*/
+			
+			// Fill in box with appropriate color
 			g.setColor(boxColor);
-			if(!gridModule.formatForPDF.getValue()){
-						g.fillRect(x, y, gridModule.getCellWidth()+1, gridModule.getCellHeight()+1);
-			} else g.fillRect(x, y, gridModule.getCellWidth(), gridModule.getCellHeight());
-			g.setColor(Color.gray);
-			if(gridModule.getDrawOutline().getValue()){
-				g.drawRect(x, y, gridModule.getCellWidth(), gridModule.getCellHeight());
+			if (!gridModule.formatForPDF.getValue()) {
+				g.fillRect(x, y, gridModule.getCellWidth()+1, gridModule.getCellHeight()+1);
+			} else {
+				g.fillRect(x, y, gridModule.getCellWidth(), gridModule.getCellHeight());
 			}
-			else{
+
+			g.setColor(Color.gray);
+			// Draw outline of all grids
+			if (gridModule.getDrawOutline().getValue()) {
+				g.drawRect(x, y, gridModule.getCellWidth(), gridModule.getCellHeight());
+			} else { // Draw internal borders only
 				drawInternalBorders(x, y, row, col, g);
 			}
 
-			if(gridModule.getDisplayCellValue().getValue()){
-				if(gridModule.getCurrentFont()!=null){
+			if (gridModule.getDisplayCellValue().getValue()) {
+				if (gridModule.getCurrentFont()!=null) {
 					g.setFont(gridModule.getCurrentFont());
 				}
-				if(gridModule.getDisplayCellColor().getValue() && textColor==boxColor) //Makes sure the values displayed in cell don't have font color same as color displayed as cell (currently only black & white)
+				if (gridModule.getDisplayCellColor().getValue() && textColor==boxColor) {
+					//Makes sure the values displayed in cell don't have font color same 
+					// as color displayed as cell (currently only black & white)
 					g.setColor(altTextColor);
+				}
 				else g.setColor(textColor);
-				if(nodeValue.isCombinable()){
+				if (nodeValue.isCombinable()) {
 					String nodeValString = MesquiteDouble.toStringDigitsSpecified(nodeValue.getDoubleValue(), sigFigs);
 					g.drawString(nodeValString, StringUtil.getStringCenterPosition(nodeValString, g, x, gridModule.getCellWidth(), null), StringUtil.getStringVertPosition(g, y, gridModule.getCellHeight(), null));
 				}
@@ -843,7 +896,14 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		}
 	}
 	/*..................................................................*/
-	/**Draws only internal borders between grid cells, as opposed to internal & external borders*/
+	/** Draws only internal borders between grid cells, as opposed to internal 
+	 * and external borders
+	 * 
+	 * @param x	   left edge of grid cell
+	 * @param y	   top edge of grid cell
+	 * @param row  row number in corresponding grid
+	 * @param col  column number in corresponding grid
+	 * @param g    {@code Graphics} object responsible for drawing*/
 	private void drawInternalBorders(int x, int y, int row, int col, Graphics g){
 		if(gridModule.getNumCols() > 1){
 			if(col > 0){
@@ -863,14 +923,17 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		}
 	}
 	/*..................................................................*/
-	public void drawOnTree(Tree tree, int drawnRoot, Graphics g) {//Called by TreeDisplay.drawAllExtras, potentially twice
+	/** <p>Draws grids on tree</p>
+	 * <p>Called by {@link mesquite.lib.TreeDisplay}, potentially twice.</p>
+	 * 
+	 * @param tree  the {@code Tree} object in display
+	 * @param drawnRoot  root of tree in drawing (included per specifications
+	 * 					 of {@link mesquite.lib.TreeDisplayDrawnExtra} and 
+	 * 					 not used
+	 * @param g    {@code Graphics} object responsible for drawing
+	 * */
+	public void drawOnTree(Tree tree, int drawnRoot, Graphics g) {
 		Font origFont = g.getFont();
-		// Remove grid annotations if they're supposed to be gone
-		if (!gridModule.annotateNodes.getValue()) {
-			if (((Associable)tree).anyAssociatedObject(NameReference.getNameReference("NodeGridValues"))) {
-				((Associable)tree).removeAssociatedObjects(NameReference.getNameReference("NodeGridValues"));
-			}
-		}
 		drawGridOnBranch(tree, tree.getRoot(), g);
 		if(legend==null){
 			legend = new GridLegend(gridModule, treeDisplay, "Grid Coordinator Legend", Color.black, gridModule.getCellColors(), gridModule.getNumNodeTask(), gridModule.getNumRows(), gridModule.getNumCols());
@@ -879,30 +942,99 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		}
 		if(legend!=null)
 			legend.adjustLocation();
-		if(initialSetup){ //When grids are first set up (or file is first opened), some boxes are not colored correctly.  This second call for drawing should fix the problem. Oliver. Nov.16.2012.
+		if(initialSetup){ 
+			/* When grids are first set up (or file is first opened), some 
+			 * boxes are not colored correctly.  This second call for drawing 
+			 * should fix the problem. Oliver. Nov.16.2012.*/
 			drawGridOnBranch(tree,tree.getRoot(),g);
 			initialSetup = false;
 		}
 		g.setFont(origFont);
 	}
 	/*..................................................................*/
-	// Required for grids to be printed on PDF output
+	/** <p>Prints grids on tree</p>
+	 * <p>Called by {@code TreeDisplay}, potentially twice.</p>
+	 * 
+	 * @param tree  the {@code Tree} object in display
+	 * @param drawnRoot  root of tree in drawing (included per specifications
+	 * 					 of {@link mesquite.lib.TreeDisplayDrawnExtra} and 
+	 * 					 not used
+	 * @param g    {@code Graphics} object responsible for drawing
+	 * */
 	public void printOnTree(Tree tree, int drawnRoot, Graphics g) { //Called by TreeDisplay.drawAllExtras, potentially twice
 		drawOnTree(tree, drawnRoot, g); 
 	}
 	/*..................................................................*/
-	public void setTree(Tree tree) {
-		this.tree = tree;
+	/** Annotates nodes of the tree; recurses over all descendants of 
+	 * {@code node}
+	 * 
+	 * @param tree  the {@code Tree} object to be annotated
+	 * @param node  node number of the node to annotate
+	 * */
+	private void annotateNode(Tree tree, int node) {
+		if (tree != null && MesquiteInteger.isCombinable(node)){
+			// Recurse through descendants of node
+			for(int d = tree.firstDaughterOfNode(node); tree.nodeExists(d); d = tree.nextSisterOfNode(d)){
+				// Don't want these grids on terminal branches
+				if(!tree.nodeIsTerminal(d)){
+					annotateNode(tree, d);
+					// An array we'll use to store node annotations
+					String[] annotations = new String[gridModule.getNumRows() * gridModule.getNumCols()];
+					int annotationIndex = 0;
+					MesquiteNumber cellValue = new MesquiteNumber(0);
+					// Annotate row by row (in context of grid cells)
+					for(int iR = 0; iR < gridModule.getNumRows(); iR++){
+						// Annotate each column for current row
+						for(int iC = 0; iC < gridModule.getNumCols(); iC++){
+							cellValue.setValue(this.doCalculations(d, iR, iC));
+							// Store the annotation for this cell in the String array
+							annotations[annotationIndex] = "NGV" + (iR + 1) + "." + (iC + 1) + "=" + cellValue.toString();							
+							annotationIndex++;
+						}
+					}
+					// Write those annotations to the tree
+					if (tree instanceof Associable) {
+						String annotationString = String.join(":", annotations);
+						((Associable)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), d, annotationString);
+					}
+				}
+			}
+		}
 	}
 	/*..................................................................*/
+	/** <p>Draws grids on tree</p>
+	 * <p>Called by {@link mesquite.lib.TreeDisplay#setTreeAllExtras(Tree)}, 
+	 * potentially more than once.</p>
+	 * 
+	 * @param tree  the {@code Tree} object used for display
+	 * */
+	public void setTree(Tree tree) {
+		this.tree = tree;
+		if (gridModule.annotateNodes.getValue()) {
+			// Add annotations to nodes
+			annotateNode(this.tree, this.tree.getRoot());
+		} else {
+			// Remove node annotations (if they are there)
+			if (((Associable)tree).anyAssociatedObject(NameReference.getNameReference("NodeGridValues"))) {
+				((Associable)tree).removeAssociatedObjects(NameReference.getNameReference("NodeGridValues"));
+			}
+		}
+	}
+	/*..................................................................*/
+	/** Returns {@code Tree} on which grids are drawn
+	 * 
+	 * @return the {@code Tree} on which grids are drawn
+	 * */
 	public Tree getTree(){
 		return tree;
 	}
 	/*..................................................................*/
+	/** Turns off the grid drawings and legend
+	 * */
 	public void turnOff(){
-		if (numForNodeCells!=null)
-			numForNodeCells=null;
-		if (legend!=null)
+		if (numForNodeCells != null)
+			numForNodeCells = null;
+		if (legend != null)
 			removePanelPlease(legend);
 		super.turnOff();
 	}
