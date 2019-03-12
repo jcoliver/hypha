@@ -24,7 +24,7 @@ import mesquite.hypha.NumForNodeWithThreshold.NumForNodeWithThreshold;
  * a subclass of TreeDisplayAssistantAO. */
 
 public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
-	private Vector<NodeGridOperator> grids;  //
+	private Vector<NodeGridOperator> grids;
 	MesquiteSubmenuSpec aboveTMenuItem, belowTMenuItem, inAMenuItem, lowCMenuItem, highCMenuItem;
 	private NumForNodeWithThreshold[][] numForNodeTask;
 	private int numCols = MesquiteInteger.unassigned;
@@ -613,7 +613,7 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 	}
 	/*..................................................................*/
 	public boolean isPrerelease(){
-		return true;
+		return false;
 	}
 	/*..................................................................*/
 	public int getCellWidth() {
