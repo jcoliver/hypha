@@ -20,32 +20,49 @@ import mesquite.lib.*;
 import mesquite.lib.duties.*;
 import mesquite.hypha.NumForNodeWithThreshold.NumForNodeWithThreshold;
 
-/**Tree display assistant for drawing a series of grid cells on a branch.  Was originally
- * a subclass of TreeDisplayAssistantAO. */
-
+/**
+ * Draws grids on a tree to display support values from multiple tree sources.
+ */
 public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 	private Vector<NodeGridOperator> grids;
 	MesquiteSubmenuSpec aboveTMenuItem, belowTMenuItem, inAMenuItem, lowCMenuItem, highCMenuItem;
+	/** Array of calculator modules that will perform calculations; indexed 
+	 * first by grid row, then grid column */
 	private NumForNodeWithThreshold[][] numForNodeTask;
-	private int numCols = MesquiteInteger.unassigned;
+	/** Number of rows in grid */
 	private int numRows = MesquiteInteger.unassigned;
+	/** Number of columns in grid */
+	private int numCols = MesquiteInteger.unassigned;
+	/** Total number of cells in grid (numRows x numCols) */
 	private int numCells = MesquiteInteger.unassigned;
+	/** Maximum size of grid, 3 x 3 */
 	static int maxCells = 9;
+	/** Default height of grid cells in pixels (10) */
 	static int defaultHeight = 10;
+	/** Default width of grid cells in pixels (20) */
 	static int defaultWidth = 20;
+	/** Height of grid cells in pixels */
 	private int cellHeight = defaultHeight;
+	/** Width of grid cells in pixels */
 	private int cellWidth = defaultWidth;
-	MesquiteInteger pos = new MesquiteInteger(0); //For doCommand navigation
+	/** MesquiteInteger for {@link #doCommand(String, String, CommandChecker)} navigation */ 
+	MesquiteInteger pos = new MesquiteInteger(0);
+	/** Color for inapplicable cells; i.e. the node does not exist in tree source */
 	public Color inAppColor = Color.gray;
+	/** Color for support values below threshold */
 	public Color belowThreshColor = Color.white;
+	/** Color for support values above threshold  */
 	public Color aboveThreshColor = Color.black;
+	/** Color for cells with conflicting topology that are below threshold */
 	public Color lowConflictColor = ColorDistribution.lightBlue;
+	/** Color for cells with conflicting topology that are above threshold */
 	public Color highConflictColor = Color.red;
-	
 	MesquiteBoolean displayCellColor, displayCellValue, includeMissing, drawOutline, annotateNodes;
 	MesquiteMenuItemSpec displayCellColorItem, displayCellValueItem, includeMissingItem, drawOutlineItem, formatForPDFItem, annotateNodesMenuItem;//suppressRedrawItem, sigFigsItem;
 	MesquiteString atColorName, btColorName, inAColorName, lcColorName, hcColorName;
+	/** Horizontal offset, in pixels, to use in legend positioning */
 	int initialOffsetX=MesquiteInteger.unassigned;
+	/** Vertical offset, in pixels, to use in legend positioning */
 	int initialOffsetY= MesquiteInteger.unassigned;
 	Font currentFont = null;
 	String myFont = null;
@@ -54,11 +71,36 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 	MesquiteBoolean formatForPDF;
 //	MesquiteBoolean suppressRedraw;
 	
+	
+	/*..................................................................*/
+	/**
+	 * Returns name of module
+	 * 
+	 * @return name of the module
+	 * */
 	public String getName() {
 		return "Grids for nodes";
 	}
-	/**Establishes grid size (number of rows & colums), value to be used for coloring grid cells (NumberForNodes)
-	 * for each grid cell, and the threshold to be used when deciding what color to fill in for each cell.*/
+
+	/*..................................................................*/
+	/** Begins cascade for setting up grids.
+	 * 
+	 * <p>Establishes
+	 *   <ul>
+	 *     <li>grid size (number of rows & columns)</li>
+	 *     <li>value to be used for coloring grid cells (a {@link mesquite.lib.duties.NumberForNode}) 
+	 *     for each grid cell; if not scripting, will hire the appropriate 
+	 *     employees</li>
+	 *     <li>the threshold to be used when deciding what color to fill in 
+	 *     for each cell</li>
+	 * 	</ul>
+	 * </p>
+	 * @param arguments    additional arguments for startup (unused)
+	 * @param condition    condition ? (unused)
+	 * @param hiredByName  indicates whether this module was hired by name
+	 * @return             {@code true} if module successfully starts, 
+	 *                     otherwise {@code false} 
+	 * */
 	public boolean startJob(String arguments, Object condition,	boolean hiredByName) {
 		grids = new Vector<NodeGridOperator>();
 		makeMenu("Grids");
@@ -166,8 +208,25 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 		return true;
 	}
 	/*..................................................................*/
-	/**Performs commands based on the String commandName it is passed.  Mostly used for restoring
-	 * objects/numbers upon opening a file which employs this module.*/
+	/** Performs commands based on the {@code commandName} and optional {@code 
+	 * arguments} it is passed.
+	 * 
+	 * <p> Used for
+	 *   <ul>
+	 *     <li>restoring values and objects upon opening a file</li>
+	 *     <li>responding to menu actions</li>
+	 *   </ul> 
+	 * if {@code commandName} is not recognized, ultimately calls the {@code 
+	 * doCommand} of superclass {@link mesquite.lib.duties.TreeDisplayAssistantA#doCommand(String, String, CommandChecker) 
+	 * TreeDisplayAssistantA.doCommand()}</p>
+	 * 
+	 * @param commandName  command sent to this module
+	 * @param arguments    additional arguments necessary to complete command; 
+	 *                     can be null
+	 * @param checker      {@link mesquite.lib.CommandChecker CommandChecker} 
+	 *                     for comparing commands and arguments
+	 * @return             usually {@code null}, but if command results in 
+	 *                     hiring of an employee module, returns that employee */
 	public Object doCommand(String commandName, String arguments, CommandChecker checker) {
 		if(checker.compareStart(this.getClass(), "Sets module used to calculate value for node", "[name of module]", commandName, "setNumForNode")){
 			String disposable = ParseUtil.getFirstToken(commandName, pos); //A string used only to move the parser position.
@@ -351,9 +410,9 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 	 	}
 
 	 	else if (checker.compare(this.getClass(), "Toggles whether to add node grid values as node annotations to tree", "[on or off]", commandName, "toggleAnnotateNodes")) {
+	 		boolean currentAnnotate = annotateNodes.getValue();
 	 		annotateNodes.toggleValue(parser.getFirstToken(arguments));
-	 		if(annotateNodes.getValue()){
-//	 			redraw(); // This was original way
+	 		if(currentAnnotate != annotateNodes.getValue()){
 	 			reannotate();
  		 		// After the annotation happens, need to notify listeners that the actual tree has changed
  		 		Enumeration<NodeGridOperator> e = grids.elements();
@@ -469,16 +528,31 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 		return null;
 	}
 	/*..................................................................*/
-	/**Creates a TreeDisplayExtra, which will do the actual drawing on the tree.  Called by this
-	 * modules employer (usually BasicTreeWindowMaker)*/
+	/** Creates a TreeDisplayExtra, which will do the actual drawing on the 
+	 * tree
+	 * 
+	 * <p>Called by this module's employer (usually {@link mesquite.trees.BasicTreeWindowMaker.BasicTreeWindowMaker
+	 * BasicTreeWindowMaker})</p>
+	 * 
+	 * @param treeDisplay  the panel responsible for drawing the tree
+	 * @return             object for drawing "extras" on a displayed tree*/
 	public TreeDisplayExtra createTreeDisplayExtra(TreeDisplay treeDisplay) {
 		NodeGridOperator newGrid = new NodeGridOperator(this, treeDisplay, numForNodeTask);
 		grids.addElement(newGrid);
 		return newGrid;
 	}
 	/*..................................................................*/
-	/**Writes a Snapshot to MesquiteFile file, containing information about the number of rows, columns, and cells.
-	 * also records NumberForNode hired for each cell, as well as threshold value used for coloring cells.*/
+	/** Writes a Snapshot to MesquiteFile file
+	 * 
+	 * <p> Resulting Snapshot contains information about the number of rows, 
+	 * columns, and cells. Also records calculator module ({@link 
+	 * mesquite.hypha.NumForNodeWithThreshold.NumForNodeWithThreshold NumForNodeWithThreshold}) 
+	 * hired for each cell, as well as threshold value used for coloring each 
+	 * cell.</p>
+	 * 
+	 * @param file  file to write Snapshot snippet to
+	 * @return      Snapshot object with settings and preferences required 
+	 *              for successful startup of this module*/
 	public Snapshot getSnapshot(MesquiteFile file){
 		Snapshot temp = new Snapshot();
 		temp.addLine("setGridDimensions " + numRows + " " + numCols);
@@ -530,30 +604,43 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 		return temp;
 	}
 	/*..................................................................*/
-	/**Returns the array of NumberForNode objects used to color grid cells*/
+	/** Returns the array of calculator modules used to color grid cells.
+	 * 
+	 * @return array of calculator modules*/
 	public NumForNodeWithThreshold[][] getNumNodeTask(){
 		return numForNodeTask;
 	}
 	/*..................................................................*/
-	/**Returns the number of rows in the grid.*/
+	/** Returns the number of rows in the grid.
+	 * 
+	 * @return integer number of rows in grid*/
 	public int getNumRows(){
 		return numRows;
 	}
 	/*..................................................................*/
-	/**Returns the number of columns in the grid.*/
+	/** Returns the number of columns in the grid.
+	 * 
+	 * @return integer number of columns in grid*/
 	public int getNumCols(){
 		return numCols;
 	}
 	/*..................................................................*/
-	/**Returns the number of cells in the grid.*/
+	/** Returns the number of cells in the grid.
+	 * 
+	 * @return integer number of cells in the grid; <i>should</i> be the 
+	 *         product of the number of rows times the number of columns*/
 	public int getNumCells(){
 		return numCells;
 	}
 	/*..................................................................*/
+	/** Returns whether or not this module is a primary choice for hiring
+	 * 
+	 * @return {@code false}*/
 	public boolean requestPrimaryChoice(){
 		return false;
 	}
 	/*..................................................................*/
+	/** Removes the grids from the tree. */
 	public void closeAllNodeOperators(){
 		Enumeration<NodeGridOperator> e = grids.elements();
 		while (e.hasMoreElements()){
@@ -566,12 +653,25 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 	}
 	/*..................................................................*/
 	//TODO: this method should probably be more flushed out...
+	/** Updates grids when employee modules are changed. 
+	 * 
+	 * <p>Specifically, calls {@link #reannotate() and #redraw()}.</p>
+	 * 
+	 * @param employee      the MesquiteModule (an employee of this module) that 
+	 *                      has changed
+	 * @param source        (not used)
+	 * @param notification  (not used) 
+	 */
 	public void employeeParametersChanged(MesquiteModule employee, MesquiteModule source, Notification notification){
 		reannotate();
 		redraw();
 	}
 	/*..................................................................*/
-	/** Calls TaxaTreeDisplay.repaint(), which in turn calls NodeGridOperator.drawOnTree()*/
+	/** Starts cascade to redraw the display.
+	 * 
+	 * <p>Calls {@link mesquite.lib.TreeDisplay#repaint() TreeDisplay.repaint()}, 
+	 * which (in most cases) calls {@link mesquite.hypha.GridForNode.NodeGridOperator#drawOnTree(Tree, int, Graphics) NodeGridOperator.drawOnTree()}.
+	 */
 	public void redraw(){
 		Enumeration<NodeGridOperator> e = grids.elements();
 		while(e.hasMoreElements()){
@@ -586,8 +686,11 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 		}
 	}
 	/*..................................................................*/
-	/** Calls TreeDisplay.setTreeAllExtras, starting cascade that ultimately 
-	 * calls TreeDisplayDrawnExtra.setTree() i.e. NodeGridOperator.setTree()*/
+	/** Starts cascade to annotate nodes of display tree with support values.
+	 *  
+	 * <p>Calls {@link mesquite.lib.TreeDisplay#setTreeAllExtras(Tree) TreeDisplay.setTreeAllExtras()}, 
+	 * starting cascade that ultimately calls {@link mesquite.hypha.GridForNode.NodeGridOperator#setTree(Tree) NodeGridOperator.setTree()}</p>
+	 */
 	public void reannotate() {
 		Enumeration<NodeGridOperator> e = grids.elements();
 		while(e.hasMoreElements()){
@@ -601,17 +704,33 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 			}
 		}
 	}
-
 	/*..................................................................*/
+	/**
+	 * Removes drawings from tree display.
+	 * 
+	 * <p>Also calls {@link mesquite.lib.duties.TreeDisplayAssistantA#endJob()
+	 * super.endJob()}.</p>
+	 */
 	public void endJob(){
 		closeAllNodeOperators();
 		super.endJob();
 	}
 	/*..................................................................*/
+	/**
+	 * Quits.
+	 * 
+	 * <p>Not clear if {@code m} is an employee of this module or not
+	 * 
+	 * @param m possibly an employee
+	 */
 	public void employeeQuit(MesquiteModule m){
 		iQuit();
 	}
 	/*..................................................................*/
+	/** Returns whether or not the module is a pre-release version.
+	 * 
+	 * @return {@code false}
+	 * */
 	public boolean isPrerelease(){
 		return false;
 	}
