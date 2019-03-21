@@ -751,13 +751,39 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 		this.cellHeight = cellHeight;
 	}
 	/*..................................................................*/
-	/**Returns array of colors corresponding to the colors reflecting values which are above the threshold,
-	 * below the threshold, or missing or inapplicable (in that order in the array returned)*/
+	/** Returns array of colors to use for coloring grid cells.
+	 * 
+	 * <p>Array of {@code Color}s indexed in the following order:
+	 *   <ol>
+	 *     <li>{@link #aboveThreshColor}</li>
+	 *     <li>{@link #belowThreshColor}</li>
+	 *     <li>{@link #inAppColor}</li>
+	 *     <li>{@link #lowConflictColor}</li>
+	 *     <li>{@link #highConflictColor}</li>
+	 *   </ol>
+	 * </p>
+	 * 
+	 * @return array of cell {@code Color}s
+	 */
 	public Color[] getCellColors(){
 		Color[] cellColors = {aboveThreshColor, belowThreshColor, inAppColor, lowConflictColor, highConflictColor};
 		return cellColors;
 	}
 	/*..................................................................*/
+	/** Returns array of descriptions of grid cell colors.
+	 * 
+	 * <p>Array of {@code String}s indexed in the following order:
+	 *   <ol>
+	 *     <li>Above Threshold</li>
+	 *     <li>Below Threshold</li>
+	 *     <li>Missing or Inapplicable</li>
+	 *     <li>Low Conflict</li>
+	 *     <li>High Conflict</li>
+	 *   </ol>
+	 * </p>
+	 * 
+	 * @return array of {@code String} descriptions for each grid cell color
+	 */
 	public String[] getStateNames(){
 		String[] stateNames = {"Above Threshold", "Below Threshold", "Missing or Inapplicable", "Low Conflict", "High Conflict"};
 		return stateNames;
@@ -813,6 +839,8 @@ public class GridForNode extends TreeDisplayAssistantA implements LegendHolder{
 }
 
 /*======================================================================================*/
+/** TreeDisplayDrawnExtra responsible for drawing grids on displayed tree
+ */
 class NodeGridOperator extends TreeDisplayDrawnExtra{
 	private GridForNode gridModule;
 	private Tree tree = treeDisplay.getTree();
@@ -825,12 +853,13 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 
 	/** Constructor method
 	 * 
-	 * @param ownerModule  		the {@link mesquite.hypha.GridForNode} module 
-	 * 							that owns this object
-	 * @param treeDisplay		the {@link mesquite.lib.TreeDisplay} 
+	 * @param ownerModule  		the {@link mesquite.hypha.GridForNode GridForNode} 
+	 * 							module that owns this object
+	 * @param treeDisplay		the {@link mesquite.lib.TreeDisplay TreeDisplay} 
 	 * 							responsible for displaying the tree and grids
 	 * @param numForNodeArray	two-dimensional array for the calculators that 
-	 * 							will provide cell values*/
+	 * 							will provide cell values
+	 */
 	public NodeGridOperator(GridForNode ownerModule, TreeDisplay treeDisplay, NumForNodeWithThreshold[][] numForNodeArray){
 		super(ownerModule, treeDisplay);
 		gridModule = ownerModule;
@@ -844,7 +873,8 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	 * @param col  column number in corresponding grid
 	 * @return  MesquiteNumber value for the node/row/column combination for 
 	 * the corresponding NumberForNodeWithThreshold module; returns unassigned 
-	 * if the required modules are not available.*/
+	 * if the required modules are not available.
+	 */
 	private MesquiteNumber doCalculations(int node, int row, int col){
 		if (tree.nodeExists(node)){
 			if( result == null ){
@@ -872,14 +902,16 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		return result;
 	}
 	/*..................................................................*/
-	/** <p>Draws grids on {@code tree}.</p>
+	/** Draws grids on display tree.
+	 * 
 	 * <p>Operates on passed Graphics object {@code g}; filling in grids row 
-	 * by row, calling {@link #drawGridCell} for each cell; recurses through 
-	 * all descendants of {@code node}</p>
+	 * by row, calling {@link #drawGridCell(Tree, int, int, int, Graphics, int, int) drawGridCell} 
+	 * for each cell; recurses through all descendants of {@code node}</p>
 	 * 
 	 * @param tree  the {@code Tree} object to be annotated
 	 * @param node  the node number on which to start
-	 * @param g	    the {@code Graphics} object responsible for drawing*/
+	 * @param g	    the {@code Graphics} object responsible for drawing
+	 */
 	private void drawGridOnBranch(Tree tree, int node, Graphics g){
 		numForNodeCells = gridModule.getNumNodeTask();
 		if(numForNodeCells!=null){
@@ -922,7 +954,8 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		}
 	}
 	/*..................................................................*/
-	/** <p>Draws a single grid cell</p>
+	/** Draws a single grid cell
+	 * 
 	 * <p>Color is based on whether {@code NumberForNode} value is (1) 
 	 * applicable and (2) above or below a user-defined threshold value.</p>
 	 * 
@@ -932,7 +965,8 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	 * @param col   column number in corresponding grid
 	 * @param g	    {@code Graphics} object responsible for drawing
 	 * @param x		left edge of grid cell
-	 * @param y		top edge of grid cell*/
+	 * @param y		top edge of grid cell
+	 */
 	private void drawGridCell(Tree tree, int node, int row, int col, Graphics g, int x, int y){
 		Color oC = g.getColor();
 		Color inApp = gridModule.inAppColor;
@@ -1022,7 +1056,8 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	 * @param y	   top edge of grid cell
 	 * @param row  row number in corresponding grid
 	 * @param col  column number in corresponding grid
-	 * @param g    {@code Graphics} object responsible for drawing*/
+	 * @param g    {@code Graphics} object responsible for drawing
+	 */
 	private void drawInternalBorders(int x, int y, int row, int col, Graphics g){
 		if(gridModule.getNumCols() > 1){
 			if(col > 0){
@@ -1042,15 +1077,17 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		}
 	}
 	/*..................................................................*/
-	/** <p>Draws grids on tree</p>
-	 * <p>Called by {@link mesquite.lib.TreeDisplay}, potentially twice.</p>
+	/** Draws grids on tree.
+	 * 
+	 * <p>Called by {@link mesquite.lib.TreeDisplay TreeDisplay}, potentially 
+	 * twice.</p>
 	 * 
 	 * @param tree  the {@code Tree} object in display
 	 * @param drawnRoot  root of tree in drawing (included per specifications
 	 * 					 of {@link mesquite.lib.TreeDisplayDrawnExtra} and 
-	 * 					 not used
+	 * 					 not used)
 	 * @param g    {@code Graphics} object responsible for drawing
-	 * */
+	 */
 	public void drawOnTree(Tree tree, int drawnRoot, Graphics g) {
 		Font origFont = g.getFont();
 		drawGridOnBranch(tree, tree.getRoot(), g);
@@ -1071,25 +1108,30 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		g.setFont(origFont);
 	}
 	/*..................................................................*/
-	/** <p>Prints grids on tree</p>
-	 * <p>Called by {@code TreeDisplay}, potentially twice.</p>
+	/** Prints grids on tree
+	 * 
+	 * <p>Called by {@link mesquite.lib.TreeDisplay TreeDisplay}, potentially 
+	 * twice.</p>
 	 * 
 	 * @param tree  the {@code Tree} object in display
 	 * @param drawnRoot  root of tree in drawing (included per specifications
 	 * 					 of {@link mesquite.lib.TreeDisplayDrawnExtra} and 
 	 * 					 not used
 	 * @param g    {@code Graphics} object responsible for drawing
-	 * */
-	public void printOnTree(Tree tree, int drawnRoot, Graphics g) { //Called by TreeDisplay.drawAllExtras, potentially twice
+	 */
+	public void printOnTree(Tree tree, int drawnRoot, Graphics g) {
 		drawOnTree(tree, drawnRoot, g); 
 	}
 	/*..................................................................*/
 	/** Annotates nodes of the tree; recurses over all descendants of 
-	 * {@code node}
+	 * {@code node}.
+	 * 
+	 * <p>Annotation writes string with support values used for coloring 
+	 * grid cells to the newick-formatted tree.</p>
 	 * 
 	 * @param tree  the {@code Tree} object to be annotated
 	 * @param node  node number of the node to annotate
-	 * */
+	 */
 	private void annotateNode(Tree tree, int node) {
 		if (tree != null && MesquiteInteger.isCombinable(node)){
 			// Recurse through descendants of node
@@ -1121,12 +1163,13 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		}
 	}
 	/*..................................................................*/
-	/** <p>Draws grids on tree</p>
-	 * <p>Called by {@link mesquite.lib.TreeDisplay#setTreeAllExtras(Tree)}, 
-	 * potentially more than once.</p>
+	/** Draws grids on tree.
+	 * 
+	 * <p>Called by {@link mesquite.lib.TreeDisplay#setTreeAllExtras(Tree) 
+	 * TreeDisplay.setTreeAllExtras}, potentially more than once.</p>
 	 * 
 	 * @param tree  the {@code Tree} object used for display
-	 * */
+	 */
 	public void setTree(Tree tree) {
 		this.tree = tree;
 		if (gridModule.annotateNodes.getValue()) {
@@ -1140,16 +1183,16 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 		}
 	}
 	/*..................................................................*/
-	/** Returns {@code Tree} on which grids are drawn
+	/** Returns {@code Tree} on which grids are drawn.
 	 * 
 	 * @return the {@code Tree} on which grids are drawn
-	 * */
+	 */
 	public Tree getTree(){
 		return tree;
 	}
 	/*..................................................................*/
 	/** Turns off the grid drawings and legend
-	 * */
+	*/
 	public void turnOff(){
 		if (numForNodeCells != null)
 			numForNodeCells = null;
@@ -1160,6 +1203,12 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 }
 
 /*======================================================================================*/
+/** Legend for grid coloring and user interaction.
+ * 
+ * <p>In addition to showing the color scheme for grids, the legend provides 
+ * functionality for individual cell coloring, including selection of tree 
+ * sources and threshold values.</p>
+ */
 class GridLegend extends TreeDisplayLegend{
 	private LegendHolder gridModule;
 	private static final int defaultLegendWidth=160;
@@ -1182,7 +1231,21 @@ class GridLegend extends TreeDisplayLegend{
 	private NumForNodeWithThreshold[][] numNodeTask;
 	private BoxDimensions[][] legendBoxInfo;
 
-	/**Constructor method for GridLegend*/
+	/** Constructor method
+	 * 
+	 * @param gridModule  the {@link #GridForNode(LegendHolder, TreeDisplay, String, Color, Color[], NumForNodeWithThreshold[][], int, int) GridForNode} 
+	 *                    module in charge of drawing the grids
+	 * @param treeDisplay the {@code Panel} responsible for displaying tree
+	 * @param title       legend title
+	 * @param titleColor  color to use for legend
+	 * @param cellColors  array of Color values for cell coloring. See 
+	 *                    {@link mesquite.hypha.GridForNode.GridForNode#getCellColors() 
+	 *                    GridForNode.getCellColors()}
+	 * @param numNodeTask two-dimensional array for the calculators that will 
+	 *                    provide cell values
+	 * @param nRows       number of rows in grid
+	 * @param nCols       number of columns in grid
+	 */
 	public GridLegend(LegendHolder gridModule, TreeDisplay treeDisplay, String title, Color titleColor, Color[] cellColors, NumForNodeWithThreshold[][] numNodeTask, int nRows, int nCols){
 		super(treeDisplay, defaultLegendWidth, defaultLegendHeight);
 		setVisible(false);
@@ -1218,6 +1281,8 @@ class GridLegend extends TreeDisplayLegend{
 	public void refreshSpecsBox(){
 	}
 	/*..................................................................*/
+	/** Draws legend.
+	 */
 	public void paint(Graphics g) {
 		if (MesquiteWindow.checkDoomed(this))
 			return;
@@ -1315,7 +1380,14 @@ class GridLegend extends TreeDisplayLegend{
 		holding = false;
 	}
 	/*..................................................................*/
-	/*For menu operations of legend*/
+	/** Provides functionality for interacting with calculators responsible
+	 * for providing values on which to base cell coloring.
+	 * 
+	 * @param whichR the row the user clicked on
+	 * @param whichC the column the user clicked on
+	 * @param whereX the horizontal position in pixels of the user click
+	 * @param whereY the vertical position in pixels of the user click
+	 * */
 	public void boxTouched(int whichR, int whichC, int whereX, int whereY){
 		numNodeTask[whichR][whichC].showPopUp(this, whereX, whereY);
 	}
@@ -1354,10 +1426,13 @@ class GridLegend extends TreeDisplayLegend{
 	}
 }
 /*======================================================================================*/
-/**A class to contain positional information for legend boxes*/
+/** A class to contain positional information for legend boxes
+ */
 class BoxDimensions{
 	private int left, right, top, bottom, row, col;
 	/*..................................................................*/
+	/** Constructor method.
+	 */
 	public BoxDimensions(int left, int right, int top, int bottom, int row, int col){
 		this.left = left;
 		this.right = right;
@@ -1412,7 +1487,10 @@ class BoxDimensions{
 	public void setRow(int row) {
 		this.row = row;
 	}
-	/**Prints dimensions of box at (row, col) to the log.  Used for debugging purposes.*/
+	/** Prints dimensions of box at (row, col) to the log.
+	 * 
+	 * <p>Debugging method.</p>
+	 */
 	public void printDimensions(int row, int col){
 		MesquiteTrunk.mesquiteTrunk.logln("Bounds of box " + row + ", " + col + ":");
 		MesquiteTrunk.mesquiteTrunk.logln("\tLeft:" + left + "\tRight:" + right);
