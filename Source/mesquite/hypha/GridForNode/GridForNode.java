@@ -845,8 +845,6 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	private GridForNode gridModule;
 	private Tree tree = treeDisplay.getTree();
 	GridLegend legend;
-	MesquiteNumber result;
-	MesquiteString resultString;
 	NumForNodeWithThreshold[][] numForNodeCells;
 //	boolean togglePrint = true;
 	private boolean initialSetup = true;
@@ -876,18 +874,13 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	 * if the required modules are not available.
 	 */
 	private MesquiteNumber doCalculations(int node, int row, int col){
+		// Changing scope of result and resultString
+		MesquiteNumber result = new MesquiteNumber();
+		result.setToUnassigned();
+		MesquiteString resultString = new MesquiteString();
+		resultString.setValue("");
+		
 		if (tree.nodeExists(node)){
-			if( result == null ){
-				result = new MesquiteNumber();
-				result.setToUnassigned();
-			} else {
-				result.setToUnassigned();
-			}
-			if (resultString==null) {
-				resultString = new MesquiteString("");
-			} else {
-				resultString.setValue("");
-			}
 			// MUST retrieve anew to ensure numForNodeCells is not null
 			numForNodeCells = gridModule.getNumNodeTask();
 			if (numForNodeCells != null) {
@@ -1026,7 +1019,7 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 			} else { // Draw internal borders only
 				drawInternalBorders(x, y, row, col, g);
 			}
-
+			
 			if (gridModule.getDisplayCellValue().getValue()) {
 				if (gridModule.getCurrentFont()!=null) {
 					g.setFont(gridModule.getCurrentFont());
@@ -1134,11 +1127,14 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	 */
 	private void annotateNode(Tree tree, int node) {
 		if (tree != null && MesquiteInteger.isCombinable(node)){
-			// Recurse through descendants of node
-			for(int d = tree.firstDaughterOfNode(node); tree.nodeExists(d); d = tree.nextSisterOfNode(d)){
-				// Don't want these grids on terminal branches
-				if(!tree.nodeIsTerminal(d)){
-					annotateNode(tree, d);
+			// Don't want annotations on terminal nodes
+			if (!tree.nodeIsTerminal(node)) {	
+				// Recurse through descendants of node
+				for(int d = tree.firstDaughterOfNode(node); tree.nodeExists(d); d = tree.nextSisterOfNode(d)){
+					// Don't want these grids on terminal branches
+					if(!tree.nodeIsTerminal(d)){
+						annotateNode(tree, d);
+					}
 					// An array we'll use to store node annotations
 					String[] annotations = new String[gridModule.getNumRows() * gridModule.getNumCols()];
 					int annotationIndex = 0;
@@ -1147,7 +1143,7 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 					for(int iR = 0; iR < gridModule.getNumRows(); iR++){
 						// Annotate each column for current row
 						for(int iC = 0; iC < gridModule.getNumCols(); iC++){
-							cellValue.setValue(this.doCalculations(d, iR, iC));
+							cellValue.setValue(this.doCalculations(node, iR, iC));
 							// Store the annotation for this cell in the String array
 							annotations[annotationIndex] = "NGV" + (iR + 1) + "." + (iC + 1) + "=" + cellValue.toString();							
 							annotationIndex++;
@@ -1156,7 +1152,7 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 					// Write those annotations to the tree
 					if (tree instanceof Associable) {
 						String annotationString = String.join(":", annotations);
-						((Associable)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), d, annotationString);
+						((Associable)tree).setAssociatedObject(NameReference.getNameReference("NodeGridValues"), node, annotationString);
 					}
 				}
 			}
@@ -1172,13 +1168,28 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	 */
 	public void setTree(Tree tree) {
 		this.tree = tree;
-		if (gridModule.annotateNodes.getValue()) {
-			// Add annotations to nodes
-			annotateNode(this.tree, this.tree.getRoot());
-		} else {
-			// Remove node annotations (if they are there)
-			if (((Associable)tree).anyAssociatedObject(NameReference.getNameReference("NodeGridValues"))) {
-				((Associable)tree).removeAssociatedObjects(NameReference.getNameReference("NodeGridValues"));
+		// Only proceed with annotations if all the NumForNodeWithThreshold 
+		// modules are not null
+		if (gridModule != null) {
+			numForNodeCells = gridModule.getNumNodeTask();
+			boolean annotate = true;
+			for(int iR = 0; iR < gridModule.getNumRows(); iR++){
+				for(int iC = 0; iC < gridModule.getNumCols(); iC++){
+					if (numForNodeCells[iR][iC] == null) {
+						annotate = false;
+					}
+				}
+			}
+			if (annotate) {	
+				if (gridModule.annotateNodes.getValue()) {
+					// Add annotations to nodes
+					annotateNode(this.tree, this.tree.getRoot());
+				} else {
+					// Remove node annotations (if they are there)
+					if (((Associable)tree).anyAssociatedObject(NameReference.getNameReference("NodeGridValues"))) {
+						((Associable)tree).removeAssociatedObjects(NameReference.getNameReference("NodeGridValues"));
+					}
+				}
 			}
 		}
 	}

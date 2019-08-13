@@ -187,17 +187,20 @@ public class BranchLabelFromOtherTree extends NumForNodeAndOtherTree {
 				count = null;
 				internalNodesOfMRCA = null;
 			}
-			
 			if(!conflict){// No conflict, just report support value
 				String nodeLabel = otherTree.getNodeLabel(mrca);
-				if(nodeLabel!=null)
+				if (nodeLabel != null) {
 					mNum.setValue(nodeLabel);
+				} 
 			}
 			else {
 				// There's conflict, so the largest conflicting value is returned as a negative value
 				if(largestConflict > 0.0){
 					mNum.setValue(-1 * largestConflict);
-				} else mNum.setValue(0.0); //if largestConflict == 0.0, it shouldn't be counted as conflicting. 
+				} 
+				else {
+					mNum.setValue(0.0); //if largestConflict == 0.0, it shouldn't be counted as conflicting. 
+				}
 			}
 			terminalsInOtherTree = null;
 		}
@@ -207,34 +210,46 @@ public class BranchLabelFromOtherTree extends NumForNodeAndOtherTree {
 	/*.................................................................................................................*/
 	public void calculateNumber(Tree focalTree, Tree otherTree, int node, MesquiteNumber result, MesquiteString resultString) {
 	   	clearResultAndLastResult(result);
-		if(focalTree==null || otherTree==null){
+	   	
+		if (focalTree == null || otherTree == null) {
 			return;
 		}
-		if(focalTree.getTaxa()!=otherTree.getTaxa()){//Trees must operate on same taxa
+		if (focalTree.getTaxa() != otherTree.getTaxa()) {//Trees must operate on same taxa
 			return;
 		}
-		if(!otherTree.hasNodeLabels()){
+		
+		// Other tree lacks branch labels; set to unassigned and exit
+		if (!otherTree.hasNodeLabels()) {
 			result.setToUnassigned();
 			resultString.setValue("Branch labels for node from other tree could not be calculated for node " + node + ".");
 			saveLastResult(result);
 			saveLastResultString(resultString);
 			return;
 		}
+		
+		// Trees exist, have same taxa block, and have branch labels. Proceed. Need to prune focal
+		// tree for calculation purposes
 		MesquiteTree prunedFocalTree = pruneToMatch(focalTree, otherTree);
 		prunedFocalTree.setName("Pruned version of " + focalTree.getName() + " based on " + otherTree.getName());
+		
+		// Only proceed if node is in focalTree and is internal
 		if(focalTree.nodeExists(node) && focalTree.nodeIsInternal(node)){
+			
+			// Descendant check fails, set to unassigned and exit
 			if(!descendantCheck(focalTree, prunedFocalTree, node)){
 				result.setToUnassigned();
-				resultString.setValue("Branch Length for node from other tree could not be calculated for node " + node + ".");
+				resultString.setValue("Branch Labelfor node from other tree could not be calculated for node " + node + ".");
 				saveLastResult(result);
 				saveLastResultString(resultString);
 				return;
 			}
+			// Descendant check succeeds; do calculations
 			else {
 				result.setValue(getValue(focalTree, otherTree, node));
 				resultString.setValue("Result = " + result.toString());
 			}
 		}
+
 		prunedFocalTree.dispose();
 		saveLastResult(result);
 		saveLastResultString(resultString);

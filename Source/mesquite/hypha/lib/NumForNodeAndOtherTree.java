@@ -128,6 +128,16 @@ public abstract class NumForNodeAndOtherTree extends NumberForNode {
 		calculateNumber(tree, otherTreeTask.getTree(currentTaxa ,currentTree), node, result, resultString);
 	}
 	/*.................................................................................................................*/
+	/**Returns the "other" tree used for calculations
+	 * */
+	public Tree getOtherTree() {
+		if (otherTreeTask == null || currentTaxa == null || !MesquiteInteger.isCombinable(currentTree)) {
+			return null;
+		} else {
+			return otherTreeTask.getTree(currentTaxa, currentTree);
+		}
+	}
+	/*.................................................................................................................*/
 	/** Called to provoke any necessary initialization.  This helps prevent the module's intialization queries to the user from
 	 *  happening at inopportune times (e.g., while a long chart calculation is in mid-progress)*/
 	public void initialize(Tree tree) {
