@@ -874,7 +874,6 @@ class NodeGridOperator extends TreeDisplayDrawnExtra{
 	 * if the required modules are not available.
 	 */
 	private MesquiteNumber doCalculations(int node, int row, int col){
-		// Changing scope of result and resultString
 		MesquiteNumber result = new MesquiteNumber();
 		result.setToUnassigned();
 		MesquiteString resultString = new MesquiteString();
